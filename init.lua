@@ -545,6 +545,11 @@ require('lazy').setup({
           -- or a suggestion from your LSP for this to activate.
           map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
 
+          -- Apply all available quick fixes (tries source.fixAll, then quickfix for all diagnostics)
+          map('grX', function()
+            require('custom.lsp_quickfix').apply_all()
+          end, 'Apply All Quickfi[x]es')
+
           -- Find references for the word under your cursor.
           map('grr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
 
@@ -1052,3 +1057,15 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+
+-- Use spaces instead of tabs
+vim.opt.expandtab = true
+
+-- Shift 4 spaces when tab is pressed
+vim.opt.shiftwidth = 2
+
+-- 1 tab == 4 spaces
+vim.opt.tabstop = 2
+
+-- Number of spaces that a <Tab> counts for during editing operations
+vim.opt.softtabstop = 2
