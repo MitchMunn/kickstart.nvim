@@ -550,6 +550,11 @@ require('lazy').setup({
             require('custom.lsp_quickfix').apply_all()
           end, 'Apply All Quickfi[x]es')
 
+          -- Buffer-wide quickfix picker (list all quickfix actions across the buffer)
+          map('grb', function()
+            require('custom.lsp_quickfix').pick_buffer_quickfix()
+          end, 'Buffer Quickfix Picker')
+
           -- Find references for the word under your cursor.
           map('grr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
 

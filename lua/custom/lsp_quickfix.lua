@@ -262,4 +262,148 @@ function M.apply_all()
   end)
 end
 
+-- Show a picker of all quickfix actions across the buffer
+function M.pick_buffer_quickfix()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local clients = vim.lsp.get_clients { bufnr = bufnr }
+  if #clients == 0 then
+    notify('No LSP clients attached to buffer', vim.log.levels.WARN)
+    return
+  end
+
+  -- Collect quickfix actions similarly to apply_all(), but don't execute
+  local diags = vim.diagnostic.get(bufnr)
+  if #diags == 0 then
+    notify('No diagnostics in buffer', vim.log.levels.INFO)
+    return
+  end
+
+  local jobs = {}
+  for _, client in ipairs(clients) do
+    if supports(client, vim.lsp.protocol.Methods.textDocument_codeAction) then
+      for _, d in ipairs(diags) do
+        table.insert(jobs, { client = client, d = d })
+      end
+    end
+  end
+  if #jobs == 0 then
+    notify('No clients support code actions', vim.log.levels.WARN)
+    return
+  end
+
+  local function request_jobs(only_quickfix, done)
+    local pending = #jobs
+    local out = {}
+    if pending == 0 then return done(out) end
+    for _, job in ipairs(jobs) do
+      local client = job.client
+      local d = job.d
+      local rng = range_for_diag(d, bufnr, client)
+      local lspdiag = (d.user_data and (d.user_data.lsp or d.user_data))
+      local diaglist
+      if lspdiag and lspdiag.range then
+        diaglist = { lspdiag }
+      else
+        diaglist = { { range = rng, message = d.message or '' } }
+      end
+      local r = {
+        range = rng,
+        textDocument = vim.lsp.util.make_text_document_params(bufnr),
+        context = only_quickfix and { diagnostics = diaglist, only = { 'quickfix' } } or { diagnostics = diaglist },
+      }
+      client.request('textDocument/codeAction', r, function(err, result, ctx)
+        pending = pending - 1
+        if not err and result then
+          for _, act in ipairs(result) do
+            if not act.disabled then
+              table.insert(out, { client_id = ctx.client_id, client_name = client.name, action = act, range = rng })
+            end
+          end
+        end
+        if pending == 0 then done(out) end
+      end, bufnr)
+    end
+  end
+
+  local function present(items)
+    if #items == 0 then
+      notify('No quickfix actions found', vim.log.levels.INFO)
+      return
+    end
+    -- Build display strings
+    local entries = {}
+    for _, it in ipairs(items) do
+      local start = it.range and it.range.start or { line = 0, character = 0 }
+      local display = string.format('[%s] %s  @%d:%d', it.client_name or 'lsp', it.action.title or '(untitled)', start.line + 1, start.character + 1)
+      table.insert(entries, { display = display, data = it })
+    end
+
+    local function do_apply(choice)
+      if not choice then return end
+      local it = choice.data
+      local client = vim.lsp.get_client_by_id(it.client_id)
+      if not client then return end
+      resolve_then_apply(client, it.action)
+    end
+
+    local ok, telescope = pcall(require, 'telescope')
+    if ok and telescope and telescope.pickers and telescope.finders and telescope.config then
+      local pickers = require 'telescope.pickers'
+      local finders = require 'telescope.finders'
+      local conf = require('telescope.config').values
+      local actions = require 'telescope.actions'
+      local action_state = require 'telescope.actions.state'
+
+      pickers
+        .new({}, {
+          prompt_title = 'Buffer Quickfixes',
+          finder = finders.new_table {
+            results = entries,
+            entry_maker = function(e)
+              return {
+                value = e,
+                display = e.display,
+                ordinal = e.display,
+              }
+            end,
+          },
+          sorter = conf.generic_sorter({}),
+          attach_mappings = function(prompt_bufnr, _)
+            local apply_selected = function()
+              local picker = action_state.get_current_picker(prompt_bufnr)
+              local multi = picker:get_multi_selection()
+              if multi and #multi > 0 then
+                actions.close(prompt_bufnr)
+                for _, sel in ipairs(multi) do
+                  do_apply(sel.value)
+                end
+              else
+                local sel = action_state.get_selected_entry()
+                actions.close(prompt_bufnr)
+                if sel then do_apply(sel.value) end
+              end
+            end
+            actions.select_default:replace(apply_selected)
+            return true
+          end,
+        })
+        :find()
+    else
+      -- Fallback to vim.ui.select (uses telescope-ui-select in this config)
+      vim.ui.select(entries, {
+        prompt = 'Buffer Quickfixes',
+        format_item = function(item)
+          return item.display
+        end,
+      }, do_apply)
+    end
+  end
+
+  -- First strict quickfix-only, then fallback best-effort
+  request_jobs(true, function(results)
+    if #results > 0 then return present(results) end
+    request_jobs(false, present)
+  end)
+end
+
 return M
