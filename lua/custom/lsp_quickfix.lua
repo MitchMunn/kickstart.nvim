@@ -90,6 +90,28 @@ local function range_for_diag(d, bufnr, client)
   return params.range
 end
 
+-- Apply a list of { client_id, action } sequentially
+local function apply_seq(items, final_cb)
+  local i, applied = 1, 0
+  local function step()
+    if i > #items then
+      if final_cb then final_cb(applied) end
+      return
+    end
+    local it = items[i]
+    i = i + 1
+    local client = vim.lsp.get_client_by_id(it.client_id)
+    if not client then
+      return step()
+    end
+    resolve_then_apply(client, it.action, function()
+      applied = applied + 1
+      step()
+    end)
+  end
+  step()
+end
+
 -- Apply all source.fixAll actions, then all quickfix actions for remaining diagnostics
 function M.apply_all()
   local bufnr = vim.api.nvim_get_current_buf()
@@ -100,26 +122,6 @@ function M.apply_all()
   end
 
   -- Phase 1: source.fixAll across the full document
-  local function apply_seq(items, final_cb)
-    local i, applied = 1, 0
-    local function step()
-      if i > #items then
-        if final_cb then final_cb(applied) end
-        return
-      end
-      local it = items[i]
-      i = i + 1
-      local client = vim.lsp.get_client_by_id(it.client_id)
-      if not client then
-        return step()
-      end
-      resolve_then_apply(client, it.action, function()
-        applied = applied + 1
-        step()
-      end)
-    end
-    step()
-  end
 
   local function request_fix_all(cb)
     local pending = 0
@@ -368,22 +370,48 @@ function M.pick_buffer_quickfix()
             end,
           },
           sorter = conf.generic_sorter({}),
-          attach_mappings = function(prompt_bufnr, _)
+          attach_mappings = function(prompt_bufnr, map)
             local apply_selected = function()
               local picker = action_state.get_current_picker(prompt_bufnr)
               local multi = picker:get_multi_selection()
-              if multi and #multi > 0 then
-                actions.close(prompt_bufnr)
+              local to_apply = {}
+              if type(multi) == 'table' then
                 for _, sel in ipairs(multi) do
-                  do_apply(sel.value)
+                  local val = (type(sel) == 'table' and sel.value) or sel
+                  if val and val.data then
+                    table.insert(to_apply, val.data)
+                  end
                 end
-              else
-                local sel = action_state.get_selected_entry()
-                actions.close(prompt_bufnr)
-                if sel then do_apply(sel.value) end
               end
+              if #to_apply == 0 then
+                local sel = action_state.get_selected_entry()
+                if sel and sel.value and sel.value.data then
+                  table.insert(to_apply, sel.value.data)
+                end
+              end
+
+              actions.close(prompt_bufnr)
+              if #to_apply == 0 then return end
+              apply_seq(to_apply, function(_) end)
             end
             actions.select_default:replace(apply_selected)
+            -- Ensure Tab multi-select mappings exist
+            map('i', '<Tab>', function()
+              actions.toggle_selection(prompt_bufnr)
+              actions.move_selection_next(prompt_bufnr)
+            end)
+            map('n', '<Tab>', function()
+              actions.toggle_selection(prompt_bufnr)
+              actions.move_selection_next(prompt_bufnr)
+            end)
+            map('i', '<S-Tab>', function()
+              actions.toggle_selection(prompt_bufnr)
+              actions.move_selection_previous(prompt_bufnr)
+            end)
+            map('n', '<S-Tab>', function()
+              actions.toggle_selection(prompt_bufnr)
+              actions.move_selection_previous(prompt_bufnr)
+            end)
             return true
           end,
         })
