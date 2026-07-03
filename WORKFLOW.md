@@ -66,7 +66,15 @@ vsplit/split/tab, `q`/`<Esc>` closes it.
 
 ### Search-and-replace across files (project-wide)
 
-This is the one worth remembering end-to-end (formerly in `reminder_commands.md`):
+**`<C-S-f>` or `<leader>sR`** opens grug-far — a VSCode `Ctrl+Shift+F`-style
+panel: live regex search and replace, per-match toggles, include/exclude glob
+filters, and a preview before applying. This is the go-to for anything beyond
+a quick one-off substitution. `<C-S-f>` depends on your terminal/multiplexer
+passing through the extended Ctrl+Shift keycode (same caveat as `<C-S-k>`
+above) — `<leader>sR` always works regardless.
+
+For quick one-off substitutions without leaving the quickfix flow (formerly
+in `reminder_commands.md`):
 
 ```
 <leader>sg              " search for 'my_search_string' via live grep
