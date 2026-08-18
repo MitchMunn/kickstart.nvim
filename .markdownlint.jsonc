@@ -1,0 +1,10 @@
+{
+  // Prettier (proseWrap: always, see .prettierrc.json) hard-wraps prose to
+  // printWidth on format/save, but it never reflows code fences or table
+  // columns since doing so would break the code or misalign the table. Don't
+  // flag their line length here.
+  "MD013": {
+    "code_blocks": false,
+    "tables": false
+  }
+}

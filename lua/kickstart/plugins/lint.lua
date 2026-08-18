@@ -9,6 +9,13 @@ return {
         markdown = { 'markdownlint' },
       }
 
+      -- Always lint against the config bundled with this repo, regardless of
+      -- the cwd markdownlint is invoked from (it has no upward-search for
+      -- `.markdownlint.jsonc`, only the exact cwd). See ../../.markdownlint.jsonc.
+      lint.linters.markdownlint = vim.tbl_deep_extend('force', lint.linters.markdownlint, {
+        args = { '--stdin', '--config', vim.fn.stdpath 'config' .. '/.markdownlint.jsonc' },
+      })
+
       -- To allow other plugins to add linters to require('lint').linters_by_ft,
       -- instead set linters_by_ft like this:
       -- lint.linters_by_ft = lint.linters_by_ft or {}
