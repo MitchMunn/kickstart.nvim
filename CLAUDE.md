@@ -41,6 +41,12 @@ A few things genuinely can't move (they must run at a specific point in
 the blink `lazydev` source. Mark every such spot with a `-- LOCAL:` comment so
 `git grep 'LOCAL:'` lists the entire merge surface before a sync.
 
+The `lua/custom/plugins/` loader is fail-fast and iterates in
+filesystem-nondeterministic order: an error in one `local-*.lua` aborts the loop
+and silently skips whatever hadn't loaded yet. So **run
+`scripts/healthcheck.lua` after touching any `local-*.lua`** — a stray typo in
+one file can take out unrelated plugins with no obvious link.
+
 ## Syncing with upstream kickstart
 
 ```sh

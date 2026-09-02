@@ -367,5 +367,11 @@ restore lazy.nvim state from `lazy-lock.json`.
       (servers table, lazydev, blink source) are marked `-- LOCAL:`.
       Convention + sync workflow documented in `CLAUDE.md`.
 - [x] `scripts/healthcheck.lua` added; `upstream` remote + `rerere` configured.
+- [x] Fresh-clone validation: `git clone -b vim-pack-migration` into a throwaway
+      `NVIM_APPNAME` → cold `vim.pack` install from `nvim-pack-lock.json`,
+      `PackChanged` build hooks (`libfzf.so` built), treesitter parsers compiled
+      from scratch, all `local-*.lua` loaded → `healthcheck.lua` PASS. (Mason's
+      `ensure_installed` tools install on interactive `VimEnter`, not in a fast
+      headless quit — same as upstream; not covered by this check.)
 - [ ] Interactive checklist below (UI bits headless can't reach) — for the user
       to run before merging to `master`.
