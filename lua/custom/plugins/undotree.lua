@@ -8,6 +8,4 @@ vim.pack.add {
 
 require('undotree').setup {}
 
-vim.keymap.set('n', '<leader>u', function()
-  require('undotree').toggle()
-end, { desc = 'Toggle UndoTree' })
+vim.keymap.set('n', '<leader>u', function() require('undotree').toggle() end, { desc = 'Toggle UndoTree' })

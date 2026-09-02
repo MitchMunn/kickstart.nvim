@@ -9,6 +9,4 @@ vim.pack.add { 'https://github.com/MeanderingProgrammer/render-markdown.nvim' }
 
 require('render-markdown').setup {}
 
-vim.keymap.set('n', '<leader>m', function()
-  require('render-markdown').toggle()
-end, { desc = 'Toggle [M]arkdown render' })
+vim.keymap.set('n', '<leader>m', function() require('render-markdown').toggle() end, { desc = 'Toggle [M]arkdown render' })
