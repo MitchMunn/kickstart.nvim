@@ -5,6 +5,21 @@ revisit or rewrite a piece of this setup. Not every commit gets an entry —
 only changes non-obvious enough that we'd otherwise have to re-derive the
 reasoning from scratch.
 
+## 2026-09-02 — Let Mason install `markdownlint`
+
+**Ask:** Opening any file (via Neo-tree) threw
+`Error running markdownlint: ENOENT: no such file or directory` on every
+`BufEnter`. `lua/kickstart/plugins/lint.lua` runs the `markdownlint` linter
+on markdown buffers, but the binary was never installed — nothing in the
+config told Mason to fetch it, so it only worked on machines where it
+happened to be on `$PATH`.
+
+**What we landed on:** added `'markdownlint'` to the `ensure_installed` list
+that feeds `mason-tool-installer` in `init.lua` (next to `stylua` and
+`prettierd`). Fresh clones now get the binary automatically on first
+startup. Installed it on this machine with
+`nvim --headless -c "lua require('mason-tool-installer').run_on_start()"`.
+
 ## 2026-08-18 — Auto-wrap markdown prose to satisfy markdownlint MD013
 
 **Ask:** Markdown files were showing `MD013/line-length` warnings ("Expected
