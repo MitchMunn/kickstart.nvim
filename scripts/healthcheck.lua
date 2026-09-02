@@ -41,6 +41,9 @@ for _, m in ipairs {
 } do
   check(package.loaded[m] ~= nil, 'module not loaded: ' .. m)
 end
+-- markdown-preview.nvim is a vimscript plugin (no lua module); its plugin/ file
+-- sets g:mkdp_filetypes on load. (The buffer-local command is checked in §8.)
+check(vim.g.mkdp_filetypes ~= nil, 'markdown-preview.nvim plugin/ not sourced')
 
 -- 2. Global keymaps we rely on.
 for _, k in ipairs {
@@ -50,7 +53,7 @@ for _, k in ipairs {
   '<C-j>',
   '<C-S-f>',
   '<leader>sR',
-  '<leader>m',
+  '<leader>mr',
   '<leader>u',
   '<leader>xx',
   '<leader>tt',
@@ -87,16 +90,26 @@ check(vim.tbl_contains(require('blink.cmp.config').sources.default, 'lazydev'), 
 check(type(require('nvim-treesitter').install) == 'function', 'nvim-treesitter looks like the old `master` branch (no .install)')
 check(#require('nvim-treesitter').get_installed 'parsers' > 0, 'no treesitter parsers installed')
 
--- 8. markdown parses without the 0.12 `range` crash.
+-- 8. markdown parses without the 0.12 `range` crash, and the Markdown-buffer
+--    tooling (render toggle, browser-preview command + keymap + binary) is wired.
 do
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { '# Title', '', '`code` and _em_ and [link](x).' })
+  vim.api.nvim_set_current_buf(buf)
   vim.bo[buf].filetype = 'markdown'
   local ok, err = pcall(function()
     local p = vim.treesitter.get_parser(buf, 'markdown')
     p:parse(true)
   end)
   check(ok, 'markdown treesitter parse failed: ' .. tostring(err))
+
+  check(vim.fn.exists ':MarkdownPreviewToggle' == 2, ':MarkdownPreviewToggle not defined in a markdown buffer')
+  check(vim.fn.maparg('<leader>mp', 'n') ~= '', '<leader>mp not set in a markdown buffer')
+  local mkdp_bin = vim.fn.stdpath 'data' .. '/site/pack/core/opt/markdown-preview.nvim/app/bin'
+  check(
+    vim.fn.isdirectory(mkdp_bin) == 1 and #vim.fn.glob(mkdp_bin .. '/markdown-preview-*', false, true) > 0,
+    'markdown-preview server binary not built (run :call mkdp#util#install())'
+  )
 end
 
 if #fails == 0 then

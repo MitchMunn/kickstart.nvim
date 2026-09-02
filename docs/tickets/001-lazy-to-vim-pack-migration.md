@@ -328,6 +328,10 @@ config wired it into cmp sources).
 - [ ] `nvim` starts with no errors (`:messages` clean, `:checkhealth` sane).
 - [ ] Open `README.md` — **no `range` crash**, render-markdown renders,
       `:lua print(vim.b.ts_highlight)` is truthy.
+- [ ] `<leader>mr` toggles the in-buffer render; `<leader>mp` opens a live
+      browser preview (mermaid/tables/images), toggles it off again. First
+      `<leader>mp` on a machine may need `:call mkdp#util#install()` if the
+      `PackChanged` hook didn't fetch the server binary.
 - [ ] Open a `.lua`, a `.sh`, a `.py`, a `.c` — treesitter highlight on,
       auto-install fires for any missing parser (this is where a hardcoded
       filetype list would show itself).
@@ -346,7 +350,8 @@ config wired it into cmp sources).
 - [ ] Python file: Pyright provides hover, Ruff provides diagnostics, no double
       hover.
 - [ ] clangd starts on a `.c` file with the configured flags.
-- [ ] which-key popup shows the `<leader>g` / `<leader>x` / `<leader>z` groups.
+- [ ] which-key popup shows the `<leader>g` / `<leader>m` / `<leader>x` /
+      `<leader>z` groups.
 - [ ] `nvim +checkhealth` — treesitter, mason, telescope, blink all green.
 
 ## Rollback

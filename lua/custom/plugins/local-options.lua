@@ -24,6 +24,7 @@ pcall(vim.keymap.del, 'n', '<C-k>')
 -- which-key group labels for our custom <leader> prefixes.
 require('which-key').add {
   { '<leader>g', group = '[G]lance (peek)' },
+  { '<leader>m', group = '[M]arkdown' },
   { '<leader>x', group = 'Trouble/diagnostics' },
   { '<leader>z', group = 'Zen mode' },
 }

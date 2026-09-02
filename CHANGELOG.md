@@ -5,6 +5,30 @@ revisit or rewrite a piece of this setup. Not every commit gets an entry — onl
 changes non-obvious enough that we'd otherwise have to re-derive the reasoning
 from scratch.
 
+## 2026-09-03 — Add `markdown-preview.nvim` (full browser render)
+
+**Ask:** a proper, full Markdown render — mermaid, math, images — as a
+toggleable option alongside the in-buffer `render-markdown.nvim`.
+
+**What we did:** added `iamcco/markdown-preview.nvim` in
+`lua/custom/plugins/markdown-preview.lua`. It opens a live, scroll-synced
+browser tab with full GitHub styling.
+
+- Regrouped the Markdown keymaps under a `<leader>m` which-key group:
+  `<leader>mr` = in-buffer render toggle (was `<leader>m`), `<leader>mp` =
+  browser preview toggle.
+- `<leader>mp` is set buffer-locally on `FileType markdown` (plus a sweep of
+  already-open buffers), because the plugin only defines its `:MarkdownPreview*`
+  commands buffer-locally in Markdown buffers.
+- Build step: a `PackChanged` autocmd runs the plugin's `app/install.sh`, which
+  downloads a prebuilt server binary from its GitHub releases (no Node
+  toolchain). Same pattern as kickstart's fzf-native / LuaSnip hooks. Manual
+  fallback: `:call mkdp#util#install()`.
+- `vim.g.mkdp_auto_close = 0` so the preview stays put when you leave the
+  buffer; only the toggle opens/closes it.
+- `scripts/healthcheck.lua` extended to check the plugin loaded, the binary is
+  built, and `:MarkdownPreviewToggle` + `<leader>mp` exist in a Markdown buffer.
+
 ## 2026-09-03 — Shrink the `init.lua` footprint for cheaper upstream syncs
 
 **Ask:** After the `vim.pack` migration, make future upstream syncs low-effort

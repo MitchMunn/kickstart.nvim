@@ -76,7 +76,7 @@ passing through the extended Ctrl+Shift keycode (same caveat as `<C-S-k>` above)
 For quick one-off substitutions without leaving the quickfix flow (formerly in
 `reminder_commands.md`):
 
-```
+```vim
 <leader>sg              " search for 'my_search_string' via live grep
 <C-q>                   " send all results to the quickfix list
 :cdo %s/old/new/g | update   " run the substitution across every file in the list, saving each
@@ -128,12 +128,13 @@ For quick one-off substitutions without leaving the quickfix flow (formerly in
 
 ## Formatting / editing tools
 
-| Key                                   | Action                        |
-| ------------------------------------- | ----------------------------- |
-| `<leader>f`                           | Format buffer (conform.nvim)  |
-| `<leader>u`                           | Toggle Undotree               |
-| `<leader>m`                           | Toggle rendered Markdown view |
-| `<leader>zz` or `<C-0>` (best-effort) | Toggle Zen Mode               |
+| Key                                   | Action                                                          |
+| ------------------------------------- | --------------------------------------------------------------- |
+| `<leader>f`                           | Format buffer (conform.nvim)                                    |
+| `<leader>u`                           | Toggle Undotree                                                 |
+| `<leader>mr`                          | Toggle in-buffer Markdown render (render-markdown.nvim)         |
+| `<leader>mp`                          | Toggle full Markdown preview in browser (markdown-preview.nvim) |
+| `<leader>zz` or `<C-0>` (best-effort) | Toggle Zen Mode                                                 |
 
 ## Debugging (DAP)
 

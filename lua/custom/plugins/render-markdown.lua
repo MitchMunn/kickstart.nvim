@@ -9,4 +9,6 @@ vim.pack.add { 'https://github.com/MeanderingProgrammer/render-markdown.nvim' }
 
 require('render-markdown').setup {}
 
-vim.keymap.set('n', '<leader>m', function() require('render-markdown').toggle() end, { desc = 'Toggle [M]arkdown render' })
+-- <leader>mr = in-buffer render toggle; <leader>mp = full browser preview
+-- (lua/custom/plugins/markdown-preview.lua).
+vim.keymap.set('n', '<leader>mr', function() require('render-markdown').toggle() end, { desc = '[M]arkdown in-buffer [r]ender toggle' })
