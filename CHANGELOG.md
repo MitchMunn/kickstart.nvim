@@ -5,6 +5,42 @@ revisit or rewrite a piece of this setup. Not every commit gets an entry — onl
 changes non-obvious enough that we'd otherwise have to re-derive the reasoning
 from scratch.
 
+## 2026-09-03 — Shrink the `init.lua` footprint for cheaper upstream syncs
+
+**Ask:** After the `vim.pack` migration, make future upstream syncs low-effort
+and add guardrails against regressions.
+
+**What we did:** the migration pain was entirely in files upstream owns and
+rewrites (`init.lua`, `lua/kickstart/**`). So we moved our customizations out:
+
+- New `lua/custom/plugins/local-*.lua` files, `require`d by the existing
+  directory-iterator loader _after_ all of `init.lua` has run — which means they
+  can append to already-configured plugins:
+  - `local-options.lua` — indent defaults, `<leader>td`, `<C-hjkl>` buffer-nav
+    rebind (+ `vim.keymap.del` of the global `<C-k>` so the LSP map owns it),
+    which-key group labels via `require('which-key').add`.
+  - `local-lsp.lua` — the `LspAttach` autocmd (grX/grb quickfix, `<C-k>` /
+    `<C-S-k>` / `<leader>g*` Glance) and the Ruff-hover-disable autocmd.
+  - `local-format.lua` — pokes `require('conform').formatters_by_ft` /
+    `.formatters.prettierd.env`, and its own `BufWritePre` autocmd for the
+    format-on-save opt-out (kickstart's built-in `format_on_save` is an opt-_in_
+    closure we can't extend after setup).
+  - `local-lint.lua` — the markdownlint `--config` override. `lint.lua` is now
+    byte-identical to upstream.
+- What genuinely can't move (marked `-- LOCAL:` in `init.lua` so
+  `git grep 'LOCAL:'` finds the whole merge surface): the `servers` table
+  entries (feed mason-tool-installer + the `vim.lsp` loop), `lazydev` (must be
+  added before blink's setup), the blink `lazydev` source (set at setup time).
+- `scripts/healthcheck.lua` — headless smoke test asserting every module loaded,
+  keymaps bound, LSP configs resolve, markdown parses. Run it after a sync
+  (`nvim --headless -c 'luafile scripts/healthcheck.lua'`); catches `vim.pack`'s
+  silent "didn't load" failures.
+- Added an `upstream` git remote and enabled `rerere`. Sync workflow is in
+  `CLAUDE.md`.
+
+Net: `init.lua` now differs from upstream by ~1 small block plus the SECTION 10
+`require` uncomments — a 15-minute merge instead of a day.
+
 ## 2026-09-03 — Catch up to kickstart upstream: `lazy.nvim` → `vim.pack`
 
 **Ask:** Opening any Markdown file crashed on every `BufEnter` with

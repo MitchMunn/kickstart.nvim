@@ -171,13 +171,6 @@ do
   -- instead raise a dialog asking if you wish to save the current file(s)
   -- See `:help 'confirm'`
   vim.o.confirm = true
-
-  -- Indentation defaults: 2-space, spaces-not-tabs. `guess-indent.nvim`
-  -- (SECTION 4) still adjusts these per-buffer when a file's own style differs.
-  vim.o.expandtab = true
-  vim.o.shiftwidth = 2
-  vim.o.tabstop = 2
-  vim.o.softtabstop = 2
 end
 
 -- ============================================================
@@ -217,7 +210,6 @@ do
   }
 
   vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
-  vim.keymap.set('n', '<leader>td', function() vim.diagnostic.enable(not vim.diagnostic.is_enabled()) end, { desc = '[T]oggle [D]iagnostics' })
 
   -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
   -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -233,13 +225,15 @@ do
   -- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
   -- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
-  -- Buffer navigation and jumplist, VSCode-style. `<C-w> hjkl` still does
-  -- window/pane navigation natively; Zellij's own Alt+hjkl handles panes for
-  -- this setup. `<C-k>` is left free here and bound to "go to definition" in
-  -- the LSP-attach handler (SECTION 5) instead.
-  vim.keymap.set('n', '<C-h>', '<cmd>bprevious<CR>', { desc = 'Previous buffer' })
-  vim.keymap.set('n', '<C-l>', '<cmd>bnext<CR>', { desc = 'Next buffer' })
-  vim.keymap.set('n', '<C-j>', '<C-o>', { desc = 'Jump back (previous location)' })
+  -- Keybinds to make split navigation easier.
+  --  Use CTRL+<hjkl> to switch between windows
+  --
+  --  See `:help wincmd` for a list of all window commands
+  --  NOTE: <C-hjkl> are re-bound to buffer navigation in lua/custom/plugins/local-options.lua.
+  vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+  vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+  vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+  vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
   -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
   -- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
@@ -380,9 +374,7 @@ do
       { '<leader>t', group = '[T]oggle' },
       { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } }, -- Enable gitsigns recommended keymaps first
       { 'gr', group = 'LSP Actions', mode = { 'n' } },
-      { '<leader>g', group = '[G]lance (peek)' },
-      { '<leader>x', group = 'Trouble/diagnostics' },
-      { '<leader>z', group = 'Zen mode' },
+      -- NOTE: our extra <leader> groups are registered in lua/custom/plugins/local-options.lua.
     },
   }
 
@@ -552,9 +544,6 @@ do
       -- To jump back, press <C-t>.
       vim.keymap.set('n', 'grd', builtin.lsp_definitions, { buffer = buf, desc = '[G]oto [D]efinition' })
 
-      -- VSCode-style straight-to-definition jump (see the <C-hjkl> note in SECTION 2).
-      vim.keymap.set('n', '<C-k>', builtin.lsp_definitions, { buffer = buf, desc = 'Go to Definition' })
-
       -- Fuzzy find all the symbols in your current document.
       -- Symbols are things like variables, functions, types, etc.
       vim.keymap.set('n', 'gO', builtin.lsp_document_symbols, { buffer = buf, desc = 'Open Document Symbols' })
@@ -632,9 +621,10 @@ do
   vim.pack.add { gh 'j-hui/fidget.nvim' }
   require('fidget').setup {}
 
-  -- lazydev: proper Lua-LS completions/types for the Neovim API and `vim.uv`
-  -- while editing this config. (Upstream kickstart dropped this; we keep it.)
-  -- The blink.cmp `lazydev` source is wired up in SECTION 8.
+  -- LOCAL: lazydev.nvim — Lua-LS types for the Neovim API / `vim.uv` while
+  -- editing this config. Upstream kickstart dropped it; we keep it. Must be
+  -- added before blink.cmp's setup (SECTION 8), which wires the `lazydev`
+  -- completion source. See also lua/custom/plugins/ for our other local bits.
   vim.pack.add { gh 'folke/lazydev.nvim' }
   require('lazydev').setup {
     library = {
@@ -667,18 +657,8 @@ do
       -- or a suggestion from your LSP for this to activate.
       map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
 
-      -- Apply all available quick fixes (tries source.fixAll, then quickfix for all diagnostics).
-      map('grX', function() require('custom.lsp_quickfix').apply_all() end, 'Apply All Quickfi[x]es')
-
-      -- Buffer-wide quickfix picker (list all quickfix actions across the buffer).
-      map('grb', function() require('custom.lsp_quickfix').pick_buffer_quickfix() end, 'Buffer Quickfix Picker')
-
-      -- Glance: peek in a floating window without leaving the current buffer.
-      map('<C-S-k>', function() require('glance').open 'definitions' end, 'Peek Definition (Glance)')
-      map('<leader>gd', function() require('glance').open 'definitions' end, '[G]lance [D]efinitions')
-      map('<leader>gr', function() require('glance').open 'references' end, '[G]lance [R]eferences')
-      map('<leader>gy', function() require('glance').open 'type_definitions' end, '[G]lance t[Y]pe definitions')
-      map('<leader>gm', function() require('glance').open 'implementations' end, '[G]lance i[M]plementations')
+      -- NOTE: local LSP-attach maps (grX/grb quickfix, <C-k>/<C-S-k>/<leader>g* Glance)
+      -- live in lua/custom/plugins/local-lsp.lua.
 
       -- WARN: This is not Goto Definition, this is Goto Declaration.
       --  For example, in C this would take you to the header.
@@ -723,16 +703,6 @@ do
     end,
   })
 
-  -- Let Pyright own hover for Python; Ruff only provides lint diagnostics + code actions.
-  vim.api.nvim_create_autocmd('LspAttach', {
-    group = vim.api.nvim_create_augroup('kickstart-disable-ruff-hover', { clear = true }),
-    callback = function(args)
-      local client = vim.lsp.get_client_by_id(args.data.client_id)
-      if client and client.name == 'ruff' then client.server_capabilities.hoverProvider = false end
-    end,
-    desc = 'LSP: Disable hover capability from Ruff',
-  })
-
   -- Enable the following language servers
   --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
   --  See `:help lsp-config` for information about keys and how to configure
@@ -747,6 +717,10 @@ do
     -- But for many setups, the LSP (`ts_ls`) will work just fine
     -- ts_ls = {},
 
+    -- LOCAL: our language servers. This table feeds both mason-tool-installer
+    -- (`vim.tbl_keys(servers)`) and the `vim.lsp.config`/`vim.lsp.enable` loop
+    -- below, so it's the right place for these. Related behaviour (Ruff hover
+    -- off, LSP keymaps) is in lua/custom/plugins/local-lsp.lua.
     clangd = {
       cmd = {
         'clangd',
@@ -757,7 +731,6 @@ do
       },
     },
     -- Pyright for hover/navigation; Ruff for lint diagnostics + code actions.
-    -- Ruff's hover is disabled in the LspAttach handler above so Pyright wins.
     pyright = {
       settings = {
         pyright = {
@@ -775,6 +748,7 @@ do
         settings = {},
       },
     },
+    -- END LOCAL
 
     stylua = {}, -- Used to format Lua code
 
@@ -835,8 +809,10 @@ do
   -- You can press `g?` for help in this menu.
   local ensure_installed = vim.tbl_keys(servers or {})
   vim.list_extend(ensure_installed, {
-    'prettierd', -- Markdown formatter (see SECTION 7)
-    'markdownlint', -- Markdown linter (see lua/kickstart/plugins/lint.lua)
+    -- LOCAL: Markdown formatter + linter (see SECTION 7 and
+    -- lua/custom/plugins/local-format.lua / local-lint.lua).
+    'prettierd',
+    'markdownlint',
   })
 
   require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -856,36 +832,31 @@ do
   vim.pack.add { gh 'stevearc/conform.nvim' }
   require('conform').setup {
     notify_on_error = false,
-    -- Format on save for every filetype *except* those without a well
-    -- standardized style, where LSP formatting tends to do more harm than good.
     format_on_save = function(bufnr)
-      local disable_filetypes = { c = true, cpp = true }
-      if disable_filetypes[vim.bo[bufnr].filetype] then return nil end
-      return { timeout_ms = 500 }
+      -- You can specify filetypes to autoformat on save here:
+      local enabled_filetypes = {
+        -- lua = true,
+        -- python = true,
+      }
+      if enabled_filetypes[vim.bo[bufnr].filetype] then
+        return { timeout_ms = 500 }
+      else
+        return nil
+      end
     end,
     default_format_opts = {
       lsp_format = 'fallback', -- Use external formatters if configured below, otherwise use LSP formatting. Set to `false` to disable LSP formatting entirely.
     },
+    -- NOTE: our formatter mappings, the prettierd env override, and a broader
+    -- format-on-save policy live in lua/custom/plugins/local-format.lua.
     -- You can also specify external formatters in here.
     formatters_by_ft = {
-      lua = { 'stylua' },
-      markdown = { 'prettierd', 'prettier', stop_after_first = true },
+      -- rust = { 'rustfmt' },
       -- Conform can also run multiple formatters sequentially
       -- python = { "isort", "black" },
       --
       -- You can use 'stop_after_first' to run the first available formatter from the list
       -- javascript = { "prettierd", "prettier", stop_after_first = true },
-    },
-    formatters = {
-      -- Hard-wrap Markdown prose to printWidth so it satisfies markdownlint's
-      -- MD013 line-length rule (see lua/kickstart/plugins/lint.lua). This only
-      -- applies as a fallback when the file's own project has no .prettierrc;
-      -- a project-local config always wins. See CHANGELOG 2026-08-18.
-      prettierd = {
-        env = {
-          PRETTIERD_DEFAULT_CONFIG = vim.fn.stdpath 'config' .. '/.prettierrc.json',
-        },
-      },
     },
   }
 
@@ -955,9 +926,10 @@ do
     },
 
     sources = {
+      -- LOCAL: `lazydev` source added here (must be set at blink setup time;
+      -- the plugin itself is added in SECTION 6).
       default = { 'lsp', 'path', 'snippets', 'lazydev' },
       providers = {
-        -- Make lazydev completions top priority (see SECTION 6).
         lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
       },
     },

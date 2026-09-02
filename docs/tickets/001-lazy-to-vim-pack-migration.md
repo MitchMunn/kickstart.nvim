@@ -356,12 +356,16 @@ The migration lands as its own commit(s) on a branch. To abandon:
 `rm -rf ~/.local/share/nvim/site && nvim --headless "+Lazy! restore" +qa` to
 restore lazy.nvim state from `lazy-lock.json`.
 
-## Follow-ups (not blocking)
+## Follow-ups
 
-- Update `WORKFLOW.md` for any keymap that changes.
-- `CHANGELOG.md` entry: master branch frozen + declares 0.12 unsupported →
-  migrated to `main` as part of the `lazy` → `vim.pack` upstream catch-up; note
-  `lazydev` re-added, `nvim-web-devicons` replaced by `mini.icons` mock,
-  `lazy-lock.json` removed.
-- Decide whether to keep tracking upstream kickstart at all, or declare the fork
-  fully diverged and stop.
+- [x] `CHANGELOG.md` entry (2026-09-03).
+- [x] `WORKFLOW.md` checked — the buffer/window/LSP-nav table already matched
+      the re-applied keymaps; no change needed.
+- [x] Shrink the `init.lua` footprint: local customizations moved into
+      `lua/custom/plugins/local-{options,lsp,format,lint}.lua`; `lint.lua`
+      restored to byte-identical-with-upstream. Remaining `init.lua` deltas
+      (servers table, lazydev, blink source) are marked `-- LOCAL:`.
+      Convention + sync workflow documented in `CLAUDE.md`.
+- [x] `scripts/healthcheck.lua` added; `upstream` remote + `rerere` configured.
+- [ ] Interactive checklist below (UI bits headless can't reach) — for the user
+      to run before merging to `master`.
