@@ -3,12 +3,15 @@
 -- render-markdown.nvim; toggle with <leader>mp from any Markdown buffer.
 -- https://github.com/iamcco/markdown-preview.nvim
 
-vim.pack.add { 'https://github.com/iamcco/markdown-preview.nvim' }
-
 -- Fetch the prebuilt preview-server binary after install/update (downloads from
 -- the plugin's GitHub releases into app/bin/; no Node toolchain needed).
 -- Mirrors kickstart's PackChanged build-hook pattern in init.lua SECTION 3.
 -- Manual fallback if this ever doesn't run: `:call mkdp#util#install()`.
+--
+-- Must be registered *before* vim.pack.add() below: PackChanged fires
+-- synchronously during add() on a fresh install, so an autocmd created after
+-- the call misses that first "install" event entirely (see `:help
+-- vim.pack-events`) and app/bin/ is left empty on a brand-new machine.
 vim.api.nvim_create_autocmd('PackChanged', {
   group = vim.api.nvim_create_augroup('local-mkdp-build', { clear = true }),
   callback = function(ev)
@@ -18,6 +21,8 @@ vim.api.nvim_create_autocmd('PackChanged', {
     if res.code ~= 0 then vim.notify('markdown-preview build failed:\n' .. (res.stderr or res.stdout or ''), vim.log.levels.ERROR) end
   end,
 })
+
+vim.pack.add { 'https://github.com/iamcco/markdown-preview.nvim' }
 
 -- Keep the preview tab open when you move away from the Markdown buffer; the
 -- toggle keymap is the only thing that opens/closes it.

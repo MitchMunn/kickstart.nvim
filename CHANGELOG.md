@@ -5,6 +5,30 @@ revisit or rewrite a piece of this setup. Not every commit gets an entry — onl
 changes non-obvious enough that we'd otherwise have to re-derive the reasoning
 from scratch.
 
+## 2026-09-05 — Fix `markdown-preview.nvim` binary never installing on a fresh machine
+
+**Ask:** `<leader>mp` did nothing on a freshly-cloned WSL machine (registered
+in which-key, `:MarkdownPreviewToggle` ran, but no browser tab appeared) even
+though the same config worked fine on macOS.
+
+**Root cause:** `lua/custom/plugins/markdown-preview.lua` called
+`vim.pack.add()` *before* registering the `PackChanged` autocmd that runs
+`app/install.sh` to fetch the prebuilt server binary. Per `:help
+vim.pack-events`, `PackChanged` fires synchronously during `add()` on a first
+install, so an autocmd registered afterward misses that event entirely —
+`app/bin/` was left empty and the toggle silently launched a server that
+didn't exist. On the Mac this never surfaced because the plugin had already
+been installed there under an earlier version of this file. `scripts/
+healthcheck.lua` already had a check for the built binary (§ added
+2026-09-03) and would have caught this immediately if run after the fresh
+install.
+
+**What we did:** moved the `vim.pack.add()` call to *after* the `PackChanged`
+autocmd registration, matching the ordering `:help vim.pack-events` calls out
+explicitly ("If hooks need to run on install, run this before
+`vim.pack.add()`"). Manually ran `app/install.sh` once to fix the already-broken
+WSL install.
+
 ## 2026-09-03 — Add `markdown-preview.nvim` (full browser render)
 
 **Ask:** a proper, full Markdown render — mermaid, math, images — as a

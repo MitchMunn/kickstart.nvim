@@ -15,7 +15,7 @@
       "src": "https://github.com/stevearc/conform.nvim"
     },
     "fidget.nvim": {
-      "rev": "6f793b2bcd2d35e201c09520f698bb763220908a",
+      "rev": "9e0201673e08e997e7cf52afca5565c70bd117f3",
       "src": "https://github.com/j-hui/fidget.nvim"
     },
     "gitsigns.nvim": {
@@ -23,7 +23,7 @@
       "src": "https://github.com/lewis6991/gitsigns.nvim"
     },
     "glance.nvim": {
-      "rev": "297377b0753f257c40c303e43d3f6cad74565b02",
+      "rev": "5a8eab1c1c48bfa19a33b556328a3c553138366e",
       "src": "https://github.com/DNLHC/glance.nvim"
     },
     "grug-far.nvim": {
@@ -40,7 +40,7 @@
       "version": "'harpoon2'"
     },
     "indent-blankline.nvim": {
-      "rev": "d28a3f70721c79e3c5f6693057ae929f3d9c0a03",
+      "rev": "1b56705560ddc6ab983959309317765c363dfd10",
       "src": "https://github.com/lukas-reineke/indent-blankline.nvim"
     },
     "lazydev.nvim": {
